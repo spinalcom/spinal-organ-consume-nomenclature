@@ -1,0 +1,28 @@
+{
+  "name": "spinal-organ-consume-nomenclature",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios-debug-log": "^1.0.0",
+    "dotenv": "^16.4.5",
+    "typescript": "^5.8.3"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.15.2"
+  },
+  "spinalDependencies": {
+    "spinal-core-connectorjs": "spinal-core-connectorjs",
+    "spinal-core-connectorjs_type": "spinal-core-connectorjs_type",
+    "spinal-env-viewer-plugin-excel-manager-service": "spinal-env-viewer-plugin-excel-manager-service",
+    "spinal-model-graph": "spinal-model-graph",
+    "spinal-env-viewer-plugin-documentation-service": "spinal-env-viewer-plugin-documentation-service"
+  }
+}
