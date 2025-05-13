@@ -1,3 +1,7 @@
 dist
 node_modules
 output.json
+.env.local
+*.json
+*.xlsx
+*.xls
