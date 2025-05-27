@@ -25,7 +25,7 @@ node index.js XLSX_FILE_PATH
   - get the attributs from the SpinalNode corresponding for the sheet
   - set / create the attributs from the sheet to the SpinalNode
 
-Some exceptions for the "empty" values : ` ` (space), `-` or `null`
+Some exceptions for the "empty" values in the sheet : ` ` (space), `-` or `null`
 
 - if the attribut exist in the node but "empty" in the sheet, it will be set to `-`
 - else if it doesn't exist in the node, they are skipped
