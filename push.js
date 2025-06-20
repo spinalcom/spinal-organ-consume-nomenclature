@@ -22,4 +22,4 @@
  * <http://resources.spinalcom.com/licenses.pdf>.
  */
 
-require('./dist/index');
+require('./dist/push/index');

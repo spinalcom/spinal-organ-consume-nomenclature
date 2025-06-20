@@ -24,6 +24,7 @@
 
 import {
   ENABLE_ID_CHANGE,
+  ENABLE_INFO_CHANGE,
   ENABLE_NAME_CHANGE,
   SPINALHUB_HTTP_PROTOCOL,
   SPINALHUB_IP,
@@ -40,7 +41,7 @@ import { SpinalNode } from 'spinal-model-graph';
 import { attributeService } from 'spinal-env-viewer-plugin-documentation-service';
 require('axios-debug-log/enable');
 import fs = require('fs');
-import { consumeBatch, Consumedfunction } from './consumeBatch';
+import { consumeBatch, Consumedfunction } from '../consumeBatch';
 
 main();
 
@@ -149,8 +150,23 @@ async function handleRowSheet(
           continue;
         if (dataToPush[cat] === undefined) dataToPush[cat] = {};
         dataToPush[cat][label] = labelValueInSheet.toString();
+      } else if (!ENABLE_INFO_CHANGE) {
+        console.warn(
+          `[${serverId}] Invalid key format: ${key}, ENABLE_INFO_CHANGE is set to false`
+        );
       } else {
-        console.warn(`[${serverId}] Invalid key format: ${key}`);
+        if (node.info[key] !== undefined) {
+          // if the key is not in the format "cat / label" we can push it as info
+          // this is useful for the case where we want to change the info of the node
+          if (row[key] === null || row[key] === '-') labelValueInSheet = '';
+          try {
+            node.info[key].set(labelValueInSheet.toString());
+          } catch (error) {
+            console.warn(
+              `[${serverId}] Invalid format for info: ${key}, error: ${error}`
+            );
+          }
+        }
       }
     }
   }

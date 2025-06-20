@@ -1,19 +1,19 @@
 /*
  * Copyright 2025 SpinalCom - www.spinalcom.com
- * 
+ *
  * This file is part of SpinalCore.
- * 
+ *
  * Please read all of the following terms and conditions
  * of the Free Software license Agreement ("Agreement")
  * carefully.
- * 
+ *
  * This Agreement is a legally binding contract between
  * the Licensee (as defined below) and SpinalCom that
  * sets forth the terms and conditions that govern your
  * use of the Program. By installing and/or using the
  * Program, you agree to abide by all the terms and
  * conditions stated or referenced herein.
- * 
+ *
  * If you do not agree to abide by these terms and
  * conditions, do not demonstrate your acceptance and do
  * not install or use the Program.
@@ -24,13 +24,35 @@
 
 import dotenv = require('dotenv');
 import { resolve } from 'path';
+import type { IConfig } from './IConfig';
 const processEnv: any = {};
+
+export const config: IConfig = require(resolve(
+  __dirname,
+  '..',
+  '..',
+  'get_config'
+));
+
+// verify the config
+if (
+  !config ||
+  typeof config.statingNodeServerId !== 'number' ||
+  config.statingNodeServerId === 0 ||
+  !config.targetToGet ||
+  (config.mode !== 'CONTEXT' && config.mode !== 'RELATION')
+) {
+  console.error(
+    'The config is not valid, please check the get_config.js file.'
+  );
+  process.exit(-1);
+}
 
 dotenv.config({
   processEnv: processEnv,
   path: [
-    resolve(__dirname, '..', '.env.local'),
-    resolve(__dirname, '..', '.env'),
+    resolve(__dirname, '..', '..', '.env.local'),
+    resolve(__dirname, '..', '..', '.env'),
   ],
 });
 
@@ -41,9 +63,6 @@ for (var key in processEnv) {
 }
 
 checkEnv();
-export const ENABLE_NAME_CHANGE = !!process.env.ENABLE_NAME_CHANGE;
-export const ENABLE_ID_CHANGE = !!process.env.ENABLE_ID_CHANGE;
-
 export const SPINALHUB_HTTP_PROTOCOL = process.env.SPINALHUB_PROTOCOL;
 export const SPINALHUB_IP = process.env.SPINALHUB_IP;
 export const SPINALHUB_PORT = process.env.SPINALHUB_PORT;
