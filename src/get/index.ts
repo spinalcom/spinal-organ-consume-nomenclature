@@ -35,12 +35,14 @@ import type { IConfig, IConfigRelation } from './IConfig';
 import type { SpinalContext, SpinalNode } from 'spinal-model-graph';
 import { attributeService } from 'spinal-env-viewer-plugin-documentation-service';
 import { consumeBatch } from '../consumeBatch';
-import { writeFileSync } from 'fs';
+import { createWriteStream, writeFileSync, WriteStream } from 'fs';
+import { SpinalExcelManager } from 'spinal-env-viewer-plugin-excel-manager-service';
 
 main();
 async function main() {
   let connectOpt = `${SPINALHUB_HTTP_PROTOCOL}://${SPINALHUB_USER_ID}:${SPINALHUB_USER_PASSWORD}@${SPINALHUB_IP}`;
   if (SPINALHUB_PORT) connectOpt += `:${SPINALHUB_PORT}/`;
+  console.log(`Connecting to SpinalHub at ${connectOpt}`);
   const conn = spinalCore.connect(connectOpt);
 
   const targets: SpinalNode[] = isConfigModeRelation(config)
@@ -65,11 +67,8 @@ async function main() {
       console.log(`processed ${index} of ${total}`);
     }
   );
-
-  const outputFileName = `extract.json`;
-  const jsonData = JSON.stringify(result, null, 2);
-  writeFileSync(outputFileName, jsonData, 'utf8');
-  console.log(`Data extracted and saved to ${outputFileName}`);
+  await outputToFile(result);
+  console.log(`Data extraction completed.`);
   process.exit(0);
 }
 
@@ -117,13 +116,26 @@ async function getTargetsWithRelations(
     console.error('Stating node server not found.');
     process.exit(1);
   }
+  let counter = 0;
   const targets: SpinalNode[] = await startingNode.find(
     config.relationNames,
     (spinalnode: SpinalNode) => {
       if (typeof config.targetToGet === 'string') {
-        return spinalnode.info.type.get() === config.targetToGet;
+        if (spinalnode.info.type.get() === config.targetToGet) {
+          counter++;
+          if (counter % 100 === 0) {
+            console.log(`Found ${counter} targets so far...`);
+          }
+          return true;
+        }
       } else if (typeof config.targetToGet === 'function') {
-        return config.targetToGet(spinalnode);
+        if (config.targetToGet(spinalnode)) {
+          counter++;
+          if (counter % 100 === 0) {
+            console.log(`Found ${counter} targets so far...`);
+          }
+          return true;
+        }
       }
       return false;
     }
@@ -143,18 +155,113 @@ async function getTargetsFromContext(conn: FileSystem): Promise<SpinalNode[]> {
     console.error('Stating node or context server not found.');
     process.exit(1);
   }
+  let counter = 0;
   const targets: SpinalNode[] = await startingNode.findInContext(
     contextNode,
     (spinalnode: SpinalNode) => {
       if (typeof config.targetToGet === 'string') {
-        return spinalnode.info.type.get() === config.targetToGet;
+        if (spinalnode.info.type.get() === config.targetToGet) {
+          counter++;
+          if (counter % 100 === 0) {
+            console.log(`Found ${counter} targets so far...`);
+          }
+          return true;
+        }
       } else if (typeof config.targetToGet === 'function') {
-        return config.targetToGet(spinalnode);
+        if (config.targetToGet(spinalnode)) {
+          counter++;
+          if (counter % 100 === 0) {
+            console.log(`Found ${counter} targets so far...`);
+          }
+          return true;
+        }
       }
       return false;
     }
   );
   return targets;
+}
+
+async function outputToFile(
+  result: Record<string, string | number | boolean>[]
+) {
+  if (config.exportMode?.toLowerCase() === 'xlsx') {
+    const data = formatDataForExportTable(result);
+    const workbooks = await SpinalExcelManager.exportViaWorkbook(data);
+    const outputFileName = `extract.xlsx`;
+    await workbooks[0].xlsx.writeFile(outputFileName);
+  } else if (config.exportMode?.toLowerCase() === 'csv') {
+    const data = formatDataForExportTable(result);
+    const outputFileName = `extract.csv`;
+    const ws = createWriteStream(outputFileName);
+    ws.write(
+      data[0].data[0].header.map((header) => header.header).join(',') + '\n'
+    );
+    data[0].data[0].rows.forEach((row) => {
+      ws.write(
+        Object.values(row)
+          .map((value) => (typeof value === 'string' ? `"${value}"` : value))
+          .join(',') + '\n'
+      );
+    });
+    ws.end();
+    await new Promise((resolve) => {
+      ws.on('finish', () => {
+        console.log(`Data extracted and saved to ${outputFileName}`);
+        process.exit(0);
+      });
+    });
+  } else {
+    const outputFileName = `extract.json`;
+    const jsonData = JSON.stringify(result, null, 2);
+    writeFileSync(outputFileName, jsonData, 'utf8');
+    console.log(`Data extracted and saved to ${outputFileName}`);
+  }
+}
+
+function formatDataForExportTable(
+  input: Record<string, string | number | boolean>[]
+) {
+  const result = [
+    {
+      name: 'name',
+      author: 'author',
+      data: [],
+    },
+  ];
+  const sheet = {
+    name: 'MAIN',
+    header: [],
+    rows: [],
+  };
+  result[0].data.push(sheet);
+  // get the headers from all the elements
+  const headersStr: string[] = ['SpinalGraph ID', 'Dynamic ID', 'Name'];
+  input.forEach((item) => {
+    Object.keys(item).forEach((key) => {
+      if (!headersStr.includes(key)) {
+        headersStr.push(key);
+      }
+    });
+  });
+  let id = 1;
+  // create the header objects
+  sheet.header = headersStr.map((header) => ({
+    key: `id${id++}`,
+    header,
+    width: 10,
+  }));
+
+  sheet.rows = input.map((data) => {
+    const row: Record<string, string | number | boolean> = {};
+    sheet.header.forEach((header) => {
+      const key = header.key;
+      row[key] = data[header.header] !== undefined ? data[header.header] : '';
+    });
+    return row;
+  });
+
+  return result;
 }
 
 function isConfigModeRelation(config: IConfig): config is IConfigRelation {

@@ -26,6 +26,13 @@ import type { SpinalNode } from 'spinal-model-graph';
 export type TTargetToGetPredicate = (node: SpinalNode) => boolean;
 export interface IConfig {
   /**
+   * output type of the export
+   * @type {('JSON' | 'CSV' | 'XLSX')}
+   * @memberof IConfig
+   */
+  exportMode: 'JSON' | 'CSV' | 'XLSX';
+
+  /**
    * the _server_id of the starting node
    * @type {number}
    * @memberof IConfig

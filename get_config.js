@@ -23,6 +23,8 @@
  */
 
 module.exports = {
+  exportMode: "JSON", // the export mode to use, can be JSON, XLSX or CSV; default is JSON
+
   statingNodeServerId: 0, // the _server_id of the starting node
 
   // to to filter the targets to get
@@ -30,7 +32,7 @@ module.exports = {
   // - if targetToGet is a function, 
   //   - the function will be called with the spinalnode as parameter
   //   - must return true to keep the node
-  targetToGet: "geographicRoom",
+  targetToGet: "geographicFloor",
 
 
   // the mode to retrive the targets
@@ -47,7 +49,8 @@ module.exports = {
   relationNames: [
     "hasGeographicBuilding",
     "hasGeographicFloor",
-    "hasGeographicRoom",
+    // "hasGeographicRoom",
+    // "hasBimObject",
   ],
 
   // the list of attributes to get from the targets in the `node.info`
